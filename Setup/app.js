@@ -3,37 +3,77 @@ new Vue({
     data:{
         playerHealth: 100,
         monsterHealth: 100,
-        gameStarted: false
+        gameStarted: false,
+        logs: [],
+        isGameCancelled: false
     },
     methods: {
         startGame: function(){
             this.gameStarted = true;
             this.playerHealth = 100;
             this.monsterHealth = 100;
+            this.isGameCancelled = false;
+            this.logs.unshift({
+                isPlayer: true,
+                text: "The game has started!"
+            })
         },
-
+        endGame: function(){
+            this.playerHealth = 0;
+            this.monsterHealth = 0;
+            this.gameStarted = false;
+        },
         attack: function(){
             var max = 10,
                 min = 3;
-
-                this.playerHealth -= this.damage(min, max);;
-                this.checkDamage();
-
-                max = 10;
-                min =  3;
-                this.monsterHealth -= this.damage(min, max);
-                this.checkDamage();
-
+            this.playerAttack(min, max);
+            if(this.isGameCancelled === true){
+                return false;
+            }
+            this.monsterAttack(min, max);
         }, 
+        monsterAttack: function(min, max){
+                var damage;
+
+                damage = this.damage(min, max);
+                this.playerHealth -= damage;
+                this.logs.unshift({
+                    isPlayer: false,
+                    text: "The monster reduced the players's health by "+ damage
+                })
+                this.checkDamage();
+        },
+        playerAttack: function(min, max){
+           var damage = this.damage(min, max);
+
+            this.monsterHealth -= damage;
+            this.logs.unshift({
+                isPlayer: true,
+                text: "The player reduced the monter's health by "+ damage
+            })
+            this.checkDamage();
+        },
         specialAttack: function(){
-            this.monsterHealth -= this.damage(10,20);
-            this.playerHealth -= this.damage(7, 13);;
+            this.playerAttack(10, 20);
+            if(this.isGameCancelled === true){
+                return false;
+            }
+
+            this.monsterAttack(7, 13);
         },
         heal: function(){
             if(this.playerHealth <=95){
             this.playerHealth += 10;
+            this.logs.unshift({
+                isPlayer: true,
+                text: "The player health healed up by 10!"
+            })
             }else{
             this.playerHealth = 100;
+            this.logs.unshift({
+                isPlayer: true,
+                text: "The player has completely recovered! Hurray..."
+            })
             }
             this.damage(3,10)
             this.playerHealth -=this.damage(5,10)
@@ -42,6 +82,10 @@ new Vue({
             if(confirm("Feeling like a pussy and quit?")){
                 this.playerHealth = 0;
                 alert("Even monster is disappointed!\nYou lose!")
+                this.logs.unshift({
+                    isPlayer: true,
+                    text: "The player has given up!!"
+                })
                 this.confirmation()
             }
         },
@@ -66,10 +110,12 @@ new Vue({
 
         confirmation: function(){
             if(confirm("Play Again?")){
-                this.gameStarted = true;
                 this.startGame();
+                this.logs.splice(0,this.logs.length);
             }else{
-                this.gameStarted = false;
+                this.endGame();
+                this.logs.splice(0,this.logs.length);
+                this.isGameCancelled = true;
             };    
         }
         }
